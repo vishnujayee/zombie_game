@@ -88,10 +88,22 @@ function load(files, opts = {}) {
   }
   const W13 = sandbox.W13;
   W13.__sandbox = sandbox;
+  // opts.inject: stub modules (e.g. Textures) for tests that don't load the real file.
+  if (opts.inject) for (const k in opts.inject) if (!W13[k]) W13[k] = opts.inject[k];
   return W13;
 }
 
 const ALL = ['config.js', 'util.js', 'events.js', 'map.js', 'textures.js', 'input.js', 'audio.js',
   'player.js', 'weapons.js', 'enemies.js', 'waves.js', 'raycaster.js', 'effects.js', 'hud.js', 'game.js'];
 
-module.exports = { load, ALL, ROOT };
+// Simple Textures stub for tests that don't need real art.
+function stubTextures() {
+  const img = (w, h) => ({ w, h, px: new Uint32Array(w * h).fill(0xff808080) });
+  return {
+    init() {}, wall: () => new Uint32Array(4096).fill(0xff606060),
+    sprite: () => img(64, 64), weapon: () => img(96, 72),
+    drawText() {}, textWidth: (t, s) => t.length * 6 * (s || 1),
+  };
+}
+
+module.exports = { load, ALL, ROOT, stubTextures };
