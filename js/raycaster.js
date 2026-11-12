@@ -106,6 +106,7 @@ W13.Raycaster = (function () {
       const y0 = Math.max(0, Math.ceil(top)), y1 = Math.min(VH, Math.ceil(top + hgt));
       if (x0 >= x1 || y0 >= y1) continue;
       let l = s.bright ? 1 : fog(depth) + M.tileLight(s.x, s.y, t) + flash * fog(depth * 0.6) * 0.55;
+      if (s.minLight && depth < W13.Config.light.fogEnd && l < s.minLight) l = s.minLight;
       if (l > 1.15) l = 1.15;
       const tint = s.tint || 0;
       for (let x = x0; x < x1; x++) {

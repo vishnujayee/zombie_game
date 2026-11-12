@@ -34,6 +34,7 @@ W13.Game = (function () {
   function restart() {
     ['Map', 'Player', 'Weapons', 'Enemies', 'Waves', 'Effects', 'Hud', 'Input', 'Audio'].forEach(m => call(m, 'reset'));
     api.debug.god = false; api.debug.noclip = false;
+    resetScare(); scare.opened = false;
     api.errorMessage = '';
     errorLogged = false;
     setState('PLAYING');
@@ -111,6 +112,34 @@ W13.Game = (function () {
     step(dt);
   }
 
+  // ---- pickups as billboards ----
+  const PICKUP_IMG = { health: 'pickup_health', ammo_pistol: 'pickup_ammo', ammo_shells: 'pickup_shells', shotgun: 'pickup_shotgun' };
+  function pickupSprites() {
+    const out = [], T = W13.Textures;
+    for (const p of W13.Map.pickups) {
+      if (p.taken) continue;
+      out.push({ x: p.x, y: p.y, img: T.sprite(PICKUP_IMG[p.kind]), scale: p.kind === 'shotgun' ? 0.6 : 0.42, lift: 0.04 + 0.04 * Math.sin(time * 3 + p.x), minLight: 0.35 });
+    }
+    return out;
+  }
+
+  // ---- opening scare: the reception door creaks open and a figure crosses the lobby, then is gone ----
+  const scare = { t: 0, done: false, active: false };
+  function resetScare() { scare.t = 0; scare.done = false; scare.active = false; }
+  function updateScare(dt) {
+    if (scare.done) return;
+    scare.t += dt;
+    if (scare.t >= 3.2 && !scare.opened) { scare.opened = true; W13.Map.openDoor('D@4,25'); }
+    scare.active = scare.t >= 4 && scare.t < 5.5;
+    if (scare.t >= 5.5) { scare.done = true; scare.active = false; call('Audio', 'play', 'zombie_groan_2', { x: 9.5, y: 21.5 }, 0.7); }
+  }
+  function scareSprite() {
+    if (!scare.active) return null;
+    const k = (scare.t - 4) / 1.5;
+    return { x: 1.8 + k * 9, y: 21.5, img: W13.Textures.sprite('shambler', 'walk', Math.floor(scare.t * 6) % 4), scale: 1, scare: true };
+  }
+  api.scare = scare;
+
   function attractCam() {
     return { x: 6.5, y: 19.5, angle: time * 0.15 };
   }
@@ -129,7 +158,9 @@ W13.Game = (function () {
         if (P) call('Audio', 'setListener', P.x, P.y, P.angle);
         if (P && P.stats) P.stats.time += dt;
       }
+      if (playing) updateScare(dt);
       if (api.state !== 'PAUSED') call('Effects', 'update', dt);
+      call('Hud', 'update', dt);
       render(dt);
     } catch (e) {
       if (!errorLogged) { errorLogged = true; console.error(e); }
@@ -146,8 +177,8 @@ W13.Game = (function () {
     const sprites = [];
     if (inWorld) {
       const es = call('Enemies', 'spritesForRender'); if (es) sprites.push(...es);
-      const ps = call('Hud', 'pickupSprites', time); if (ps) sprites.push(...ps);
-      const sc = call('Hud', 'scareSprites', time); if (sc) sprites.push(...sc);
+      sprites.push(...pickupSprites());
+      const sc = scareSprite(); if (sc) sprites.push(sc);
     }
     const W = W13.Weapons;
     const flash = W && W.state && W.state.flashT > 0 ? 1 : 0;
