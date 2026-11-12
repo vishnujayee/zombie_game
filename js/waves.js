@@ -60,7 +60,8 @@ W13.Waves = (function () {
     // small jitter so stacked spawns don't overlap exactly
     for (let k = 0; k < 6; k++) {
       const x = base.x + (Math.random() - 0.5) * 0.4, y = base.y + (Math.random() - 0.5) * 0.4;
-      if (!M.isSolid(x - 0.3, y - 0.3) && !M.isSolid(x + 0.3, y - 0.3) && !M.isSolid(x - 0.3, y + 0.3) && !M.isSolid(x + 0.3, y + 0.3)) return { x, y };
+      const free = !M.isSolid(x - 0.3, y - 0.3) && !M.isSolid(x + 0.3, y - 0.3) && !M.isSolid(x - 0.3, y + 0.3) && !M.isSolid(x + 0.3, y + 0.3);
+      if (free && (!hidden.length || !M.hasLOS(P.x, P.y, x, y))) return { x, y }; // jitter must stay out of sight
     }
     return { x: base.x, y: base.y };
   }
