@@ -34,8 +34,9 @@ W13.Input = (function () {
     document.addEventListener('mousemove', e => { if (api.locked) mouseDX += e.movementX || 0; });
     canvas.addEventListener('mousedown', e => {
       if (e.button !== undefined && e.button !== 0) return;
-      clickHandlers.forEach(fn => fn());
-      state.fire = true;
+      let consumed = false;
+      clickHandlers.forEach(fn => { if (fn()) consumed = true; });
+      if (!consumed) state.fire = true; // menu clicks never become a trigger pull
     });
     document.addEventListener('mouseup', e => { if (e.button === undefined || e.button === 0) state.fire = false; });
     canvas.addEventListener('contextmenu', e => e.preventDefault && e.preventDefault());

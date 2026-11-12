@@ -42,20 +42,27 @@ W13.Game = (function () {
     call('Input', 'requestLock');
   }
 
+  // Returns true when the click was used by a menu/screen (so it isn't also a shot).
   function onClick() {
     const s = api.state;
     if (s === 'TITLE') {
       call('Audio', 'init');
       call('Input', 'requestLock');
       setState('PLAYING');
-    } else if (s === 'PAUSED') {
-      if (api.errorMessage) { restart(); return; }
+      return true;
+    }
+    if (s === 'PAUSED') {
+      if (api.errorMessage) { restart(); return true; }
       call('Audio', 'init');
       call('Input', 'requestLock');
       setState('PLAYING');
-    } else if ((s === 'DEAD' || s === 'VICTORY') && stateTime > 0.8) {
-      restart();
+      return true;
     }
+    if (s === 'DEAD' || s === 'VICTORY') {
+      if (stateTime > 0.8) restart();
+      return true;
+    }
+    return false;
   }
 
   function onKey(code) {

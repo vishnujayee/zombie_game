@@ -48,3 +48,72 @@ test('raycaster fills zBuffer', () => {
   for (let i = 0; i < 320; i++) assert.ok(isFinite(W.Raycaster.zBuffer[i]) && W.Raycaster.zBuffer[i] > 0, 'col ' + i);
   assert.ok(buf.some(v => v !== 0));
 });
+
+// ---- Task 11: screens, scare, stats ----
+const FULL = ['config.js', 'util.js', 'events.js', 'map.js', 'input.js', 'audio.js', 'player.js', 'weapons.js', 'enemies.js', 'waves.js', 'raycaster.js', 'effects.js', 'hud.js', 'game.js'];
+function full() {
+  const W = load(FULL, { inject: { Textures: stubTextures() } });
+  W.Game.boot();
+  return W;
+}
+const click = W => W.__sandbox.document.getElementById('screen').dispatch('mousedown', { button: 0 });
+
+test('click on TITLE starts PLAYING', () => {
+  const W = full();
+  assert.strictEqual(W.Game.state, 'TITLE');
+  click(W);
+  assert.strictEqual(W.Game.state, 'PLAYING');
+});
+
+test('click on DEAD restarts to PLAYING with hp 100', () => {
+  const W = full(); click(W);
+  W.Game.debug.forceDeath();
+  assert.strictEqual(W.Game.state, 'DEAD');
+  click(W); // too early: ignored
+  assert.strictEqual(W.Game.state, 'DEAD');
+  for (let i = 0; i < 20; i++) W.Game.step(0.05);
+  click(W);
+  assert.strictEqual(W.Game.state, 'PLAYING');
+  assert.strictEqual(W.Player.hp, 100);
+});
+
+test('click on VICTORY restarts', () => {
+  const W = full(); click(W);
+  W.Events.emit('level:victory', {});
+  assert.strictEqual(W.Game.state, 'VICTORY');
+  for (let i = 0; i < 20; i++) W.Game.step(0.05);
+  click(W);
+  assert.strictEqual(W.Game.state, 'PLAYING');
+  assert.strictEqual(W.Waves.waveIndex, -1);
+});
+
+test('accuracy computed as hits/shots, 0 when no shots', () => {
+  const W = full();
+  assert.strictEqual(W.Hud.accuracy({ shots: 0, hits: 0 }), 0);
+  assert.strictEqual(W.Hud.accuracy({ shots: 8, hits: 6 }), 75);
+});
+
+test('scare actor removed after 5.5 s and never damages', () => {
+  const W = full(); click(W);
+  let shown = false;
+  for (let t = 0; t < 6; t += 0.05) { W.Game.step(0.05); if (W.Game.scare.active) shown = true; }
+  assert.ok(shown, 'scare appeared');
+  assert.strictEqual(W.Game.scare.active, false);
+  assert.strictEqual(W.Game.scare.done, true);
+  assert.strictEqual(W.Player.hp, 100);
+  assert.strictEqual(W.Enemies.list.length, 0);
+});
+
+test('Escape pauses, click resumes', () => {
+  const W = full(); click(W);
+  W.__sandbox.document.dispatch('keydown', { code: 'Escape' });
+  assert.strictEqual(W.Game.state, 'PAUSED');
+  click(W);
+  assert.strictEqual(W.Game.state, 'PLAYING');
+});
+
+test('menu click does not fire a shot', () => {
+  const W = full(); click(W);
+  for (let i = 0; i < 5; i++) W.Game.step(0.05);
+  assert.strictEqual(W.Player.stats.shots, 0);
+});

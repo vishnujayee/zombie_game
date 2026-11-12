@@ -138,12 +138,14 @@ W13.Hud = (function () {
     if (!P || !P.stats) return;
     const s = P.stats;
     const mm = Math.floor(s.time / 60), ss = Math.floor(s.time % 60);
-    const acc = s.shots ? Math.round((s.hits / s.shots) * 100) : 0;
+    const acc = accuracy(s);
     centered(t, 'TIME ' + mm + ':' + (ss < 10 ? '0' : '') + ss, 84, COL.bone, 1);
     centered(t, 'KILLS ' + s.kills, 96, COL.bone, 1);
     centered(t, 'ACCURACY ' + acc + '%', 108, COL.bone, 1);
     if (st > 0.8) centered(t, 'CLICK TO PLAY AGAIN', 136, COL.dim, 1);
   }
+
+  function accuracy(s) { return s && s.shots ? Math.round((s.hits / s.shots) * 100) : 0; }
 
   function render(t, state) {
     const G = W13.Game || {};
@@ -156,5 +158,5 @@ W13.Hud = (function () {
     else if (state === 'VICTORY') drawVictory(t, st);
   }
 
-  return { init, reset, update, message, activeMessage, render, COL };
+  return { init, reset, update, message, activeMessage, render, accuracy, COL };
 })();
