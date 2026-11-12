@@ -79,9 +79,22 @@ W13.Enemies = (function () {
       const ok = [x > 0, x < W - 1, y > 0, y < H - 1];
       for (let k = 0; k < 4; k++) {
         const j = nb[k];
-        if (!ok[k] || flow[j] >= 0 || M.isSolid(j % W, (j / W) | 0)) continue;
+        if (!ok[k] || flow[j] >= 0 || (M.isSolid(j % W, (j / W) | 0) && !pushable(j % W, (j / W) | 0))) continue;
         flow[j] = d; q[qt++] = j;
       }
+    }
+  }
+  // Auto doors ('D') can be shoved open by zombies; scripted/locked doors cannot.
+  function pushable(x, y) {
+    const d = W13.Map.doorAtTile(x, y);
+    return !!d && d.ch === 'D' && !d.locked;
+  }
+  function pushDoors(e) {
+    const M = W13.Map;
+    for (const id in M.doors) {
+      const d = M.doors[id];
+      if (d.open || d.locked || d.ch !== 'D') continue;
+      if (Math.hypot(d.x + 0.5 - e.x, d.y + 0.5 - e.y) < 1.0) M.openDoor(id);
     }
   }
   // Direction to steer: straight at the player with LOS, else toward the best neighbouring tile.
@@ -93,7 +106,7 @@ W13.Enemies = (function () {
     let best = null, bd = flow[ey * W + ex] >= 0 ? flow[ey * W + ex] : 1e9;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
       const nx = ex + dx, ny = ey + dy;
-      if (M.isSolid(nx, ny)) continue;
+      if (M.isSolid(nx, ny) && !pushable(nx, ny)) continue;
       if (dx && dy && (M.isSolid(ex + dx, ey) || M.isSolid(ex, ey + dy))) continue;
       const d = flow[ny * W + nx];
       if (d >= 0 && d < bd) { bd = d; best = [nx + 0.5, ny + 0.5]; }
@@ -167,6 +180,7 @@ W13.Enemies = (function () {
         P.damage(c.damage, e.x, e.y);
       } else if (e.anim === 'attack' && e.animTime > 0.35) setAnim(e, 'walk');
     }
+    if (e.state !== 'idle') pushDoors(e);
     trackStuck(e, dt, dist);
     animate(e, dt);
   }

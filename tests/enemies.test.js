@@ -142,3 +142,21 @@ test('hitTest finds nearest enemy along ray', () => {
   assert.strictEqual(W.Enemies.hitTest(2.5, 16.5, Math.PI / 2, 20), null);
   void far;
 });
+
+test('zombies push open auto doors and path through them (patient rooms)', () => {
+  const W = mk(); const P = W.Player; W.Game = { debug: { god: true } };
+  P.x = 16.5; P.y = 20.5;                      // east hall
+  const e = W.Enemies.spawn('shambler', 15.5, 27.5, { alerted: true }); // inside a patient room, door (15,22) closed
+  assert.strictEqual(W.Map.doors['D@15,22'].open, false);
+  run(W, 10, 0.02);
+  assert.strictEqual(W.Map.doors['D@15,22'].open, true);
+  assert.ok(Math.hypot(e.x - P.x, e.y - P.y) < 1.5, `stuck at ${e.x},${e.y}`);
+});
+
+test('zombies never open scripted or locked doors', () => {
+  const W = mk(); const P = W.Player; W.Game = { debug: { god: true } };
+  P.x = 2.5; P.y = 5.5;
+  W.Enemies.spawn('shambler', 4.5, 5.5, { alerted: true }); // supply side of door 1
+  run(W, 3, 0.02);
+  assert.strictEqual(W.Map.doors['1'].open, false);
+});

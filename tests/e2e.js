@@ -27,6 +27,12 @@ function assert(cond, msg) { if (!cond) throw new Error('ASSERT: ' + msg); }
     return false;
   };
   const scenario = process.argv[2] || 'full';
+  // Point the camera at the nearest living enemy (for meaningful screenshots).
+  const faceNearest = () => ev(() => {
+    const P = W13.Player; let best = null, bd = 1e9;
+    for (const e of W13.Enemies.list) { if (e.state === 'dead') continue; const d = Math.hypot(e.x - P.x, e.y - P.y); if (d < bd && W13.Map.hasLOS(P.x, P.y, e.x, e.y)) { bd = d; best = e; } }
+    if (best) P.angle = Math.atan2(best.y - P.y, best.x - P.x);
+  });
   try {
     await page.goto(URL + (scenario === 'smoke' ? '' : '?debug=1'));
     await wait(1200);
@@ -42,7 +48,8 @@ function assert(cond, msg) { if (!cond) throw new Error('ASSERT: ' + msg); }
       // Wave 1 (lobby)
       await ev(() => W13.Game.debug.teleport('lobby'));
       assert(await waitFor(() => W13.Waves.waveIndex === 0), 'lobby starts wave 0');
-      await wait(2500);
+      await wait(4000);
+      await faceNearest(); await wait(150);
       await shot('03-lobby-wave1');
       await ev(() => W13.Game.debug.skipWave());
       assert(await waitFor(() => W13.Map.doors['1'].open), 'door 1 opens after wave 0');
@@ -51,14 +58,16 @@ function assert(cond, msg) { if (!cond) throw new Error('ASSERT: ' + msg); }
       assert(await waitFor(() => W13.Waves.waveIndex === 1), 'shotgun starts wave 1');
       assert(await ev(() => W13.Player.weapons.shotgun.owned), 'shotgun owned');
       await ev(() => W13.Game.debug.teleport('east'));
-      await wait(2500);
+      await wait(4000);
+      await faceNearest(); await wait(150);
       await shot('04-east-wave2');
       await ev(() => W13.Game.debug.skipWave());
       assert(await waitFor(() => W13.Map.doors['2'].open), 'door 2 opens after wave 1');
       // Morgue → wave 3
       await ev(() => W13.Game.debug.teleport('morgue'));
       assert(await waitFor(() => W13.Waves.waveIndex === 2), 'morgue starts wave 2');
-      await wait(2500);
+      await wait(4000);
+      await faceNearest(); await wait(150);
       await shot('05-morgue-wave3');
       await ev(() => W13.Game.debug.skipWave());
       assert(await waitFor(() => W13.Map.doors['T'].open), 'theatre door opens after wave 2');
