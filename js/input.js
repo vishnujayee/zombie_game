@@ -3,6 +3,8 @@ window.W13 = window.W13 || {};
 W13.Input = (function () {
   const keys = {};
   let mouseDX = 0;
+  let skipNextMove = false;
+  const MAX_MOVE = 300; // px per event
   let canvas = null;
   const keyHandlers = [];
   const clickHandlers = [];
@@ -31,7 +33,13 @@ W13.Input = (function () {
       if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault && e.preventDefault();
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; recompute(); });
-    document.addEventListener('mousemove', e => { if (api.locked) mouseDX += e.movementX || 0; });
+    document.addEventListener('mousemove', e => {
+      if (!api.locked) return;
+      const dx = e.movementX || 0;
+      if (skipNextMove) { skipNextMove = false; return; } // Chrome sends a bogus re-centre delta right after locking
+      if (Math.abs(dx) > MAX_MOVE) return;                 // drop implausible single-event spikes
+      mouseDX += dx;
+    });
     canvas.addEventListener('mousedown', e => {
       if (e.button !== undefined && e.button !== 0) return;
       let consumed = false;
@@ -42,6 +50,7 @@ W13.Input = (function () {
     canvas.addEventListener('contextmenu', e => e.preventDefault && e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
       api.locked = document.pointerLockElement === canvas;
+      skipNextMove = api.locked;
       lockHandlers.forEach(fn => fn(api.locked));
     });
     window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; recompute(); state.fire = false; });

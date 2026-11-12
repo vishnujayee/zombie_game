@@ -143,7 +143,7 @@ W13.Game = (function () {
   function scareSprite() {
     if (!scare.active) return null;
     const k = (scare.t - 4) / 1.5;
-    return { x: 1.8 + k * 9, y: 21.5, img: W13.Textures.sprite('shambler', 'walk', Math.floor(scare.t * 6) % 4), scale: 1, scare: true };
+    return { x: 1.8 + k * 9, y: 22.6, img: W13.Textures.sprite('shambler', 'walk', Math.floor(scare.t * 6) % 4), scale: 1, minLight: 0.3, scare: true };
   }
   api.scare = scare;
 
