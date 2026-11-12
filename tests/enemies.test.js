@@ -160,3 +160,10 @@ test('zombies never open scripted or locked doors', () => {
   run(W, 3, 0.02);
   assert.strictEqual(W.Map.doors['1'].open, false);
 });
+
+test('review: shot ray grazing a pillar does not hit an enemy hidden behind it', () => {
+  const W = mk();
+  const e = W.Enemies.spawn('shambler', 5.6, 18.08, {});
+  assert.strictEqual(W.Map.hasLOS(1.5, 17.75, e.x, e.y), false);
+  assert.strictEqual(W.Enemies.hitTest(1.5, 17.75, 0, 20), null);
+});

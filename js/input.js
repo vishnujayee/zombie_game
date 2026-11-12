@@ -4,6 +4,7 @@ W13.Input = (function () {
   const keys = {};
   let mouseDX = 0;
   let skipNextMove = false;
+  let lockErrors = 0;
   const MAX_MOVE = 300; // px per event
   let canvas = null;
   const keyHandlers = [];
@@ -34,7 +35,7 @@ W13.Input = (function () {
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; recompute(); });
     document.addEventListener('mousemove', e => {
-      if (!api.locked) return;
+      if (!api.locked && !api.lockUnavailable) return;
       const dx = e.movementX || 0;
       if (skipNextMove) { skipNextMove = false; return; } // Chrome sends a bogus re-centre delta right after locking
       if (Math.abs(dx) > MAX_MOVE) return;                 // drop implausible single-event spikes
@@ -51,8 +52,11 @@ W13.Input = (function () {
     document.addEventListener('pointerlockchange', () => {
       api.locked = document.pointerLockElement === canvas;
       skipNextMove = api.locked;
+      if (api.locked) { lockErrors = 0; api.lockUnavailable = false; }
       lockHandlers.forEach(fn => fn(api.locked));
     });
+    // After repeated refusals (e.g. some browsers on file://) fall back to unlocked mouse look.
+    document.addEventListener('pointerlockerror', () => { if (++lockErrors >= 3) api.lockUnavailable = true; });
     window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; recompute(); state.fire = false; });
   }
 
@@ -69,7 +73,7 @@ W13.Input = (function () {
   function reset() { for (const k in keys) keys[k] = false; recompute(); state.fire = false; state.weapon = null; mouseDX = 0; }
 
   const api = {
-    state, locked: false, init, reset, requestLock, consumeMouseDX, consumeWeapon,
+    state, locked: false, lockUnavailable: false, init, reset, requestLock, consumeMouseDX, consumeWeapon,
     onKey: fn => keyHandlers.push(fn), onClick: fn => clickHandlers.push(fn), onLockChange: fn => lockHandlers.push(fn),
     _press(code, down) { keys[code] = down; recompute(); }, // test/debug helper
   };

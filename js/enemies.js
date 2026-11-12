@@ -273,6 +273,7 @@ W13.Enemies = (function () {
       if (along <= 0 || along > maxDist) continue;
       const lat = Math.abs(-dx * sa + dy * ca);
       if (lat > 0.35 * cfg(e.type).scale) continue;
+      if (!W13.Map.hasLOS(ox, oy, e.x, e.y)) continue; // no hits on enemies hidden behind a corner
       if (!best || along < best.dist) best = { enemy: e, dist: along };
     }
     return best;

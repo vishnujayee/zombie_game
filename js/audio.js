@@ -254,7 +254,8 @@ W13.Audio = (function () {
         el.__chain.p.pan.value = sp.pan;
         el.volume = 1;
       } else {
-        el.volume = U.clamp(sp.gain * vol * cfg().master * (muted ? 0 : 1), 0, 1);
+        el.__vol = U.clamp(sp.gain * vol * cfg().master, 0, 1);
+        el.volume = muted ? 0 : el.__vol;
       }
       el.currentTime = 0;
       const pr = el.play();
@@ -367,7 +368,7 @@ W13.Audio = (function () {
   function toggleMute() {
     muted = !muted;
     if (master) master.gain.value = muted ? 0 : cfg().master;
-    for (const id in pools) for (const el of pools[id]) if (!el.__chain && muted) el.volume = 0;
+    for (const id in pools) for (const el of pools[id]) if (!el.__chain) el.volume = muted ? 0 : (el.__vol == null ? el.volume : el.__vol);
     return muted;
   }
 

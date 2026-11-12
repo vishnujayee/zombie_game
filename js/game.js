@@ -24,6 +24,7 @@ W13.Game = (function () {
     stateTime = 0;
     if (s !== 'PAUSED') api.errorMessage = '';
     if (s === 'PLAYING' && prev === 'TITLE') call('Audio', 'startAmbience');
+    if (s === 'PAUSED') call('Audio', 'setHeartbeat', 0);
     if (s === 'DEAD' || s === 'VICTORY') {
       try { if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* ignore */ }
       call('Audio', 'setHeartbeat', 0);
@@ -39,6 +40,7 @@ W13.Game = (function () {
     errorLogged = false;
     setState('PLAYING');
     hadLock = false;
+    call('Audio', 'startAmbience');
     call('Input', 'requestLock');
   }
 
@@ -62,6 +64,8 @@ W13.Game = (function () {
       if (stateTime > 0.8) restart();
       return true;
     }
+    const I = W13.Input;
+    if (s === 'PLAYING' && I && !I.locked && !I.lockUnavailable) { I.requestLock(); return true; }
     return false;
   }
 

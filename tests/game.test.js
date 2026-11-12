@@ -117,3 +117,47 @@ test('menu click does not fire a shot', () => {
   for (let i = 0; i < 5; i++) W.Game.step(0.05);
   assert.strictEqual(W.Player.stats.shots, 0);
 });
+
+test('review: ambience restarts after restart()', () => {
+  const W = full(); click(W);
+  let n = 0; const orig = W.Audio.startAmbience;
+  W.Audio.startAmbience = function () { n++; return orig.apply(this, arguments); };
+  W.Game.debug.forceDeath();
+  for (let i = 0; i < 20; i++) W.Game.step(0.05);
+  click(W);
+  assert.strictEqual(W.Game.state, 'PLAYING');
+  assert.ok(n >= 1, 'startAmbience called on restart');
+});
+
+test('review: click while playing without pointer lock re-requests lock instead of firing', () => {
+  const W = full(); click(W);
+  const canvas = W.__sandbox.document.getElementById('screen');
+  let req = 0; canvas.requestPointerLock = () => { req++; };
+  assert.strictEqual(W.Input.locked, false);
+  click(W);
+  for (let i = 0; i < 3; i++) W.Game.step(0.05);
+  assert.strictEqual(req, 1);
+  assert.strictEqual(W.Player.stats.shots, 0);
+});
+
+test('review: after repeated pointer-lock errors, clicks fire and mouse look works unlocked', () => {
+  const W = full(); click(W);
+  const doc = W.__sandbox.document;
+  for (let i = 0; i < 3; i++) doc.dispatch('pointerlockerror');
+  W.__sandbox.document.dispatch('mouseup', { button: 0 });
+  click(W);
+  for (let i = 0; i < 3; i++) W.Game.step(0.05);
+  assert.ok(W.Player.stats.shots >= 1);
+  doc.dispatch('mousemove', { movementX: 40 });
+  assert.strictEqual(W.Input.consumeMouseDX(), 40);
+});
+
+test('review: heartbeat stops when paused', () => {
+  const W = full(); click(W);
+  let last = null; const orig = W.Audio.setHeartbeat;
+  W.Audio.setHeartbeat = function (r) { last = r; return orig.apply(this, arguments); };
+  W.Player.hp = 10; W.Game.step(0.05);
+  assert.ok(last > 0);
+  W.__sandbox.document.dispatch('keydown', { code: 'Escape' });
+  assert.strictEqual(last, 0);
+});

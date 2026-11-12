@@ -90,6 +90,7 @@ W13.Hud = (function () {
         if (left > 0) centered(t, 'WAVE ' + (Wv.waveIndex + 1) + ' - ' + left + ' LEFT', 6, COL.bone, 1);
       }
     }
+    if (W13.Input && !W13.Input.locked && !W13.Input.lockUnavailable && G && G.state === 'PLAYING') centered(t, 'CLICK TO AIM', 60, COL.yellow, 1);
     // message
     if (msgT > 0 && msgText) {
       const a = Math.min(1, msgT / 0.6);

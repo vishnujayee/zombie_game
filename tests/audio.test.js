@@ -101,3 +101,22 @@ test('toggleMute flips and reset turns heartbeat off', () => {
   W13.Audio.reset();
   assert.strictEqual(W13.Audio._heartbeatRate(), 0);
 });
+
+test('review: unmute restores looping file volume', () => {
+  const els = [];
+  const Stub = function (src) { const el = { src, volume: 1, loop: false, listeners: {}, addEventListener(n, f) { this.listeners[n] = f; }, play() { return Promise.resolve(); }, pause() {}, cloneNode() { const c = new Stub(src); return c; } }; els.push(el); setTimeout(() => el.listeners.canplaythrough && el.listeners.canplaythrough(), 0); return el; };
+  const W13 = load(['config.js', 'util.js', 'events.js', 'audio.js'], { Audio: Stub });
+  W13.Audio.preload(); W13.Audio.init();
+  return new Promise((res, rej) => setTimeout(() => { try {
+    W13.Audio.startAmbience();
+    const amb = els.filter(e => e.loop)[0];
+    assert.ok(amb, 'ambience element looping');
+    const v = amb.volume;
+    assert.ok(v > 0);
+    W13.Audio.toggleMute();
+    assert.strictEqual(amb.volume, 0);
+    W13.Audio.toggleMute();
+    assert.ok(Math.abs(amb.volume - v) < 1e-9, `restored ${amb.volume} vs ${v}`);
+    res();
+  } catch (e) { rej(e); } }, 20));
+});
