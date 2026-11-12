@@ -23,7 +23,7 @@ Find the current position quickly: `grep -n "CLAUDE:" CLAUDE.md`
 
 ## Git
 - Branch: `claude/funny-thompson-f6u2zo`.
-- **Do not commit unless the user explicitly asks.** (User instruction, 2026-11-12.)
+- User approved commits + push to this branch on 2026-11-12 (earlier: no commits).
 
 ## Quality gate (run after every milestone)
 1. `node tests/validate-map.js` passes (once it exists).
@@ -36,19 +36,19 @@ Find the current position quickly: `grep -n "CLAUDE:" CLAUDE.md`
 - Tests: `node tests/validate-map.js` · `node tests/e2e.js` (uses the preinstalled Playwright; do NOT run `playwright install`).
 
 ## Checkpoints
-<!-- CLAUDE:CURRENT M0 -->
+<!-- CLAUDE:CURRENT DONE -->
 <!-- Tick boxes and append a short note when a milestone passes its quality gate. -->
 
 - [x] <!-- CLAUDE:CHECKPOINT M0 --> **M0 Planning**: spec, architecture doc, CLAUDE.md written. Plan: `docs/superpowers/plans/2026-11-12-ward13.md` (12 tasks).
-- [ ] <!-- CLAUDE:CHECKPOINT M1 --> **M1 Engine skeleton**: index.html, config/util/events, game loop + state machine, input + pointer lock, raycaster with flat-colour walls on a test map.
-- [ ] <!-- CLAUDE:CHECKPOINT M2 --> **M2 Map & textures**: full 32×32 Ward 13 map, zones/doors, procedural wall textures, distance darkness, flicker lights, map validator test.
-- [ ] <!-- CLAUDE:CHECKPOINT M3 --> **M3 Player & weapons**: collision, pistol + shotgun view-models, hitscan, reload, ammo, pickups.
-- [ ] <!-- CLAUDE:CHECKPOINT M4 --> **M4 Enemies**: sprites + anims, AI state machine, LOS, steering, Shambler/Runner/Bloater, damage both ways.
-- [ ] <!-- CLAUDE:CHECKPOINT M5 --> **M5 Waves & boss**: wave director script, scripted doors, The Stitched with phase 2, exit gate, stuck-enemy safety net.
-- [ ] <!-- CLAUDE:CHECKPOINT M6 --> **M6 Audio**: CC0 files + CREDITS.md, procedural fallbacks for every ID, positional audio, ambience, heartbeat.
-- [ ] <!-- CLAUDE:CHECKPOINT M7 --> **M7 Effects & HUD**: scanlines, grain, vignette, flash, shake, low-health, bitmap-font HUD, messages.
-- [ ] <!-- CLAUDE:CHECKPOINT M8 --> **M8 Screens & polish**: title/pause/dead/victory, stats, opening scare, difficulty tuning pass, README.
-- [ ] <!-- CLAUDE:CHECKPOINT M9 --> **M9 Verification**: full e2e playthrough via debug hooks, death/restart test, screenshots of each zone delivered to user.
+- [x] <!-- CLAUDE:CHECKPOINT M1 --> **M1 Engine skeleton**: index.html, config/util/events, game loop + state machine, input + pointer lock, raycaster with flat-colour walls on a test map.
+- [x] <!-- CLAUDE:CHECKPOINT M2 --> **M2 Map & textures**: full 32×32 Ward 13 map, zones/doors, procedural wall textures, distance darkness, flicker lights, map validator test.
+- [x] <!-- CLAUDE:CHECKPOINT M3 --> **M3 Player & weapons**: collision, pistol + shotgun view-models, hitscan, reload, ammo, pickups.
+- [x] <!-- CLAUDE:CHECKPOINT M4 --> **M4 Enemies**: sprites + anims, AI state machine, LOS, steering, Shambler/Runner/Bloater, damage both ways.
+- [x] <!-- CLAUDE:CHECKPOINT M5 --> **M5 Waves & boss**: wave director script, scripted doors, The Stitched with phase 2, exit gate, stuck-enemy safety net.
+- [x] <!-- CLAUDE:CHECKPOINT M6 --> **M6 Audio**: CC0 files + CREDITS.md, procedural fallbacks for every ID, positional audio, ambience, heartbeat.
+- [x] <!-- CLAUDE:CHECKPOINT M7 --> **M7 Effects & HUD**: scanlines, grain, vignette, flash, shake, low-health, bitmap-font HUD, messages.
+- [x] <!-- CLAUDE:CHECKPOINT M8 --> **M8 Screens & polish**: title/pause/dead/victory, stats, opening scare, difficulty tuning pass, README.
+- [x] <!-- CLAUDE:CHECKPOINT M9 --> **M9 Verification**: full e2e playthrough via debug hooks, death/restart test, screenshots of each zone delivered to user.
 
 ## Decisions log
 - 2026-11-12: Chose a first-person raycaster (option B) over top-down. Mixed assets (procedural art + CC0 sounds with procedural fallback). Pistol + shotgun. 5–8 min, medium. Setting: abandoned asylum "Ward 13". Boss: "The Stitched".
@@ -56,4 +56,9 @@ Find the current position quickly: `grep -n "CLAUDE:" CLAUDE.md`
 
 ## Notes for future sessions
 <!-- CLAUDE:NOTES -->
-- (empty)
+- 2026-11-12: All milestones done. 92 unit tests, map validator, headless e2e playthrough all green.
+- Sounds: CC0 sites were blocked by the network, so `assets/sfx/*.ogg` are self-generated (`node assets/sfx/generate.js`, needs ffmpeg) + procedural fallbacks.
+- On file://, file-based sounds have volume falloff but no stereo pan (Chrome limitation); procedural sounds pan.
+- Zombies push open auto doors (`D`); scripted doors (1, 2, T) and the gate (X) only open via `js/waves.js`.
+- Known deferred minor: melee/bloater burst ignore walls (straight-line distance).
+- Balance check: headless bot clears waves 1–2 at full HP; boss needs kiting (standing still loses).
