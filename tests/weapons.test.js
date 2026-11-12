@@ -90,3 +90,13 @@ test('cannot switch to shotgun until owned', () => {
   Wp.switchTo('shotgun', P);
   assert.strictEqual(P.current, 'shotgun');
 });
+
+test('a quick tap (press+release between frames) still fires once', () => {
+  const { W, P, Wp } = mk(null);
+  let shots = 0; W.Events.on('shot', () => shots++);
+  const input = inp({ fire: false, firePressed: true });
+  Wp.update(0.016, input, P);
+  Wp.update(0.5, input, P);
+  assert.strictEqual(shots, 1);
+  assert.strictEqual(input.firePressed, false);
+});

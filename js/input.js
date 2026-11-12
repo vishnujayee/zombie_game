@@ -5,12 +5,13 @@ W13.Input = (function () {
   let mouseDX = 0;
   let skipNextMove = false;
   let lockErrors = 0;
+  let everLocked = false;
   const MAX_MOVE = 300; // px per event
   let canvas = null;
   const keyHandlers = [];
   const clickHandlers = [];
   const lockHandlers = [];
-  const state = { forward: 0, strafe: 0, turn: 0, fire: false, reload: false, run: false, use: false, weapon: null };
+  const state = { forward: 0, strafe: 0, turn: 0, fire: false, firePressed: false, reload: false, run: false, use: false, weapon: null };
 
   function recompute() {
     state.forward = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
@@ -45,22 +46,24 @@ W13.Input = (function () {
       if (e.button !== undefined && e.button !== 0) return;
       let consumed = false;
       clickHandlers.forEach(fn => { if (fn()) consumed = true; });
-      if (!consumed) state.fire = true; // menu clicks never become a trigger pull
+      if (!consumed) { state.fire = true; state.firePressed = true; } // menu clicks never become a trigger pull
     });
     document.addEventListener('mouseup', e => { if (e.button === undefined || e.button === 0) state.fire = false; });
     canvas.addEventListener('contextmenu', e => e.preventDefault && e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
       api.locked = document.pointerLockElement === canvas;
       skipNextMove = api.locked;
-      if (api.locked) { lockErrors = 0; api.lockUnavailable = false; }
+      if (api.locked) { lockErrors = 0; everLocked = true; api.lockUnavailable = false; }
       lockHandlers.forEach(fn => fn(api.locked));
     });
     // After repeated refusals (e.g. some browsers on file://) fall back to unlocked mouse look.
-    document.addEventListener('pointerlockerror', () => { if (++lockErrors >= 3) api.lockUnavailable = true; });
+    document.addEventListener('pointerlockerror', lockRefused);
     window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; recompute(); state.fire = false; });
   }
 
   function requestLock() {
+    // Some embeds (sandboxed iframes) ignore the request without any event: treat no answer as a refusal.
+    setTimeout(() => { if (!api.locked && document.pointerLockElement !== canvas) lockRefused(); }, api.lockTimeoutMs);
     try {
       if (canvas && canvas.requestPointerLock) {
         const r = canvas.requestPointerLock();
@@ -68,12 +71,15 @@ W13.Input = (function () {
       }
     } catch (e) { /* pointer lock unavailable: keyboard turning still works */ }
   }
+  // Never locked this session → the embed/browser doesn't allow it: fall back immediately.
+  // Locked before → tolerate transient refusals (Chrome blocks re-lock for ~1 s after Esc).
+  function lockRefused() { if (!everLocked || ++lockErrors >= 3) api.lockUnavailable = true; }
   function consumeMouseDX() { const d = mouseDX; mouseDX = 0; return d; }
   function consumeWeapon() { const w = state.weapon; state.weapon = null; return w; }
-  function reset() { for (const k in keys) keys[k] = false; recompute(); state.fire = false; state.weapon = null; mouseDX = 0; }
+  function reset() { for (const k in keys) keys[k] = false; recompute(); state.fire = false; state.firePressed = false; state.weapon = null; mouseDX = 0; }
 
   const api = {
-    state, locked: false, lockUnavailable: false, init, reset, requestLock, consumeMouseDX, consumeWeapon,
+    state, locked: false, lockUnavailable: false, lockTimeoutMs: 1500, init, reset, requestLock, consumeMouseDX, consumeWeapon,
     onKey: fn => keyHandlers.push(fn), onClick: fn => clickHandlers.push(fn), onLockChange: fn => lockHandlers.push(fn),
     _press(code, down) { keys[code] = down; recompute(); }, // test/debug helper
   };

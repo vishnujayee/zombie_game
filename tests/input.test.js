@@ -35,3 +35,31 @@ test('no mouse look while not locked', () => {
   doc.dispatch('mousemove', { movementX: 30 });
   assert.strictEqual(W.Input.consumeMouseDX(), 0);
 });
+
+test('pointer lock requests that are silently ignored count as refusals', async () => {
+  const W = load(['config.js', 'util.js', 'events.js', 'input.js']);
+  const doc = W.__sandbox.document;
+  const canvas = doc.getElementById('screen');
+  W.Input.init(canvas);
+  W.Input.lockTimeoutMs = 30;
+  for (let i = 0; i < 3; i++) { W.Input.requestLock(); await new Promise(r => setTimeout(r, 50)); }
+  assert.strictEqual(W.Input.lockUnavailable, true);
+});
+
+test('one refusal is enough when pointer lock never worked this session', () => {
+  const W = load(['config.js', 'util.js', 'events.js', 'input.js']);
+  const doc = W.__sandbox.document;
+  W.Input.init(doc.getElementById('screen'));
+  doc.dispatch('pointerlockerror');
+  assert.strictEqual(W.Input.lockUnavailable, true);
+});
+
+test('after a successful lock, a single refusal (Chrome Esc cooldown) does not disable it', () => {
+  const W = load(['config.js', 'util.js', 'events.js', 'input.js']);
+  const doc = W.__sandbox.document, c = doc.getElementById('screen');
+  W.Input.init(c);
+  doc.pointerLockElement = c; doc.dispatch('pointerlockchange');
+  doc.pointerLockElement = null; doc.dispatch('pointerlockchange');
+  doc.dispatch('pointerlockerror');
+  assert.strictEqual(W.Input.lockUnavailable, false);
+});

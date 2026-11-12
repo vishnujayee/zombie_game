@@ -43,9 +43,12 @@ W13.Weapons = (function () {
     if (sel === 2) switchTo('shotgun', P);
     sync(P);
     const w = P.weapons[state.name], c = cfg(state.name);
+    // a click latched between frames counts as one trigger pull
+    let fire = !!input.fire;
+    if (input.firePressed && state.cooldown <= 0) { fire = true; input.firePressed = false; }
     // reloading
     if (state.reloading) {
-      if (state.name === 'shotgun' && input.fire && w.mag > 0) {
+      if (state.name === 'shotgun' && fire && w.mag > 0) {
         state.reloading = false; // firing interrupts a shell-by-shell reload
       } else {
         state.reloadT -= dt;
@@ -62,7 +65,7 @@ W13.Weapons = (function () {
     }
     if (input.reload && !state.reloading) startReload(P);
     // firing
-    if (input.fire && !state.reloading && state.cooldown <= 0) {
+    if (fire && !state.reloading && state.cooldown <= 0) {
       if (w.mag > 0) {
         fireOnce(P);
         state.cooldown = c.interval;
